@@ -504,7 +504,7 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 * Custom victory effects for custom characters (kiooeht)
 
 #### v5.5.0 ####
-* Add OnPlayerLoseBlockSubscriber hook (JohnnyDevo)
+* Add OnPlayerLoseBlockSubscriber hook (NellyDevo)
 * Added function to remove relics from custom characters' pools (Moocowsgomoo)
 
 #### v5.6.0 ####
@@ -528,7 +528,7 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 * Steam Rich Presence (kiooeht)
 * Fix whatmod purple color code not working in Chinese (kiooeht)
 * Fix whatmod not working on linked relics (kiooeht)
-* Add option for Custom Mode button (JohnnyDevo)
+* Add option for Custom Mode button (NellyDevo)
 * Fix custom character unlocks (MichaelMayhem)
 * Fix power console command for some powers (admiralbolt)
 * Fix power console command not stacking powers correctly (admiralbolt)
@@ -539,15 +539,15 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
   * `WhatMod.findModName`
   * `WhatMod.findModID`
 * Add outline color to ModColorDisplay (kiooeht)
-* Fix Spriter animations being tied to framerate (JohnnyDevo)
+* Fix Spriter animations being tied to framerate (NellyDevo)
 
 #### v5.10.0 ####
-* Unique keywords (JohnnyDevo)
-* Fix hex code card text coloration in CN languages (JohnnyDevo)
+* Unique keywords (NellyDevo)
+* Fix hex code card text coloration in CN languages (NellyDevo)
 
 #### v5.11.0 ####
 * Fix incorrect line breaks when using unique keywords (Celicath)
-* Fix unique keywords in relic descriptions (JohnnyDevo)
+* Fix unique keywords in relic descriptions (NellyDevo)
 * Fix energy tooltip appearing in SingleCardViewPopup (kiooeht)
 * Add simple API for getting keyword title/description (kiooeht)
 * Fix typo in MaxHPChangeSubscriber (kiooeht)
@@ -557,8 +557,8 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 * Fix RelicGetSubscriber not being called (kiooeht)
 * Fix RelicGetSubscriber being called a bunch during game startup (kiooeht)
 * Fix blight add command crashing (fiiiiilth)
-* Fix colored card text line length in CN mode (JohnnyDevo)
-* Fix unique keyword linebreaks in CN mode (JohnnyDevo)
+* Fix colored card text line length in CN mode (NellyDevo)
+* Fix unique keyword linebreaks in CN mode (NellyDevo)
 * Add OnPlayerDamagedSubscriber (Rin Camelia)
 * Allow Smart Texts to remove spaces between 2 words using a special keyword [REMOVE_SPACE] (JohnnyBazooka89)
 * Add AddAudioSubscriber (Alchyr)
@@ -673,17 +673,17 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 #### v5.21.0 ####
 * Fix hi-res relic art not being used on mod relics that have it (kiooeht)
 * Custom save fields for potions (kiooeht)
-* CardModifier (JohnnyDevo)
+* CardModifier (NellyDevo)
 
 #### v5.21.1 ####
 * Fix CustomRelic using small relic art as large relic art (kiooeht)
-* Remove broken onDiscarded CardModifier hook (JohnnyDevo)
-* Fix crash on very long card text caused by CardMod (JohnnyDevo)
+* Remove broken onDiscarded CardModifier hook (NellyDevo)
+* Fix crash on very long card text caused by CardMod (NellyDevo)
 
 #### v5.22.0 ####
 * Add ModLabeledButton (LordAddy)
-* Make CardModifiers save and load on master deck (JohnnyDevo)
-* Refactor CardModifier alternate cost system (JohnnyDevo)
+* Make CardModifiers save and load on master deck (NellyDevo)
+* Refactor CardModifier alternate cost system (NellyDevo)
 * Much more options for how events spawn (Alchyr)
 
 #### v5.23.0 ####
@@ -692,9 +692,9 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 * Add not-package filter for AutoAdd (BlankTheEvil)
 * Fix "Hide unnecessary unlock bar" to work on Heart kill (Celicath)
 * Change event utils default behavior to override if no type specified (Alchyr)
-* OnCreateDescriptionSubscriber (JohnnyDevo)
-* XCostModifier interface for changing X cost effect (JohnnyDevo)
-* CardModifier (JohnnyDevo)
+* OnCreateDescriptionSubscriber (NellyDevo)
+* XCostModifier interface for changing X cost effect (NellyDevo)
+* CardModifier (NellyDevo)
   * Make X costs work with alternate costs
   * Add annotation for non-savable CardModifiers
   * Fix save/load duplicating cardmods
@@ -736,7 +736,7 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
   * Add privateMethod
   * Add privateStaticMethod
 * Fix modded character selection background animation (kiooeht)
-* Fix alternate card cost logic to better fit all situtations (JohnnyDevo)
+* Fix alternate card cost logic to better fit all situtations (NellyDevo)
 
 #### v5.27.0 ####
 * Support for Slay the Spire 11-27-2020 BETA (kiooeht)
@@ -753,11 +753,11 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 
 #### v5.29.0 ####
 * Improve typing for dev console (Alchyr)
-* Fix crash to do with CardModifier with SaveIgnore in the master deck (JohnnyDevo)
-* New CardModifier hook: shouldApply (JohnnyDevo)
-* CardPowerTips (JohnnyDevo)
+* Fix crash to do with CardModifier with SaveIgnore in the master deck (NellyDevo)
+* New CardModifier hook: shouldApply (NellyDevo)
+* CardPowerTips (NellyDevo)
   * Display a card in a tooltip
-* CardBorderGlowManager (JohnnyDevo)
+* CardBorderGlowManager (NellyDevo)
   * Allows card to have multiple glow colors at once
 * No longer cull potion rewards (erasels)
   * BaseMod allows more than 5 combat rewards
@@ -774,16 +774,16 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 
 #### v5.30.1 ####
 * Fix Console being openable while it's not enabled
-* Fix CardModifier atEndOfTurn triggering at the end of monster turns (JohnnyDevo)
+* Fix CardModifier atEndOfTurn triggering at the end of monster turns (NellyDevo)
 * Fix VFXBuilder to work with packed atlases
 
 #### v5.31.0 ####
-* New CardModifier hook: calculateCardDamage (JohnnyDevo)
-* Change CardModifier copy applying to new copied card after upgrades (JohnnyDevo)
+* New CardModifier hook: calculateCardDamage (NellyDevo)
+* Change CardModifier copy applying to new copied card after upgrades (NellyDevo)
 * * Fix EventUtil override bonus condition crash (Alchyr)
 
 #### v5.32.0 ####
-* Fix all CardMod onUse related hooks to not trigger when unplayable and autoplayed (JohnnyDevo)
+* Fix all CardMod onUse related hooks to not trigger when unplayable and autoplayed (NellyDevo)
 * Add standard common CardMods (Vex)
 * Make character select screen page arrows bigger (NotInTheFace)
 
@@ -812,17 +812,17 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 * Fix scrolling tooltips on ultrawide resolutions (kiooeht)
 
 #### v5.34.0 ####
-* Fix custom mode mods sometime persisting between runs (JohnnyDevo)
+* Fix custom mode mods sometime persisting between runs (NellyDevo)
 * Console command for manipulating variables (Alchyr)
 
 #### v5.34.1 ####
 * Fix crash with custom mods being null
 
 #### v5.34.2 ####
-* Fix card border glow crash in library (JohnnyDevo)
+* Fix card border glow crash in library (NellyDevo)
 
 #### v5.34.3 ####
-* Fix monsters not passing to multitarget card modifiers (JohnnyDevo)
+* Fix monsters not passing to multitarget card modifiers (NellyDevo)
 
 #### v5.35.0 ####
 * Add fadeOutFromAlpha and fadeOutFromOriginalAlpha to VFXBuilder (EricB)
@@ -830,5 +830,242 @@ This is a fast forward to v1.6.3 of daviscook477's fork with a few additional ch
 
 #### v5.35.1 ####
 * Fix weird possible crash with dynamic text blocks (kiooeht)
+
+#### v5.36.0 ####
+* Add OnPlayerTurnStartSubscriber (kiooeht/Alchyr/herbix)
+* Add OnPlayerTurnStartPostDrawSubscriber (kiooeht/Alchyr/herbix)
+* Fix crash when no shrine events are available (modargo)
+* Fix some issues with basic cardmods (erasels)
+  * Capitalize cardmod keywords
+  * Move Exhaust cardmod to end of description
+
+#### v5.37.0 ####
+* Fix crash in card power tips (NellyDevo)
+* Add controller support for CustomCharacterSelectScreen pages (kobting)
+
+#### v5.37.1 ####
+* Fix main menu settings crash (herbix)
+* Fix cardmods not respecting action queue with automatic removal (NellyDevo)
+
+#### v5.38.0 ####
+* Add !Turn! to dynamic text (Mistress Alison)
+* Add modifyName to CardMods (Mistress Alison)
+* Fix card tintColor (herbix)
+
+#### v5.39.0 ####
+* Make dynamic text work in upgrades and upgrade previews (Mistress Alison)
+* Add CardModifier support to WhatMod (kiooeht)
+* Fix crash in ZHT with modded keywords (modargo)
+
+#### v5.40.0 ####
+* Add option to disable BaseMod gameplay fixes, allowing a more vanilla experience (kiooeht)
+  * Automatically give orb slot
+  * Allow more than 5 combat rewards
+* Add tooltip option to ModLabeledToggleButton (kiooeht)
+* Remove Note For Yourself patch that is no longer necessary (kiooeht)
+
+#### v5.40.1 ####
+* Fix Conspire being unable to load (kiooeht)
+
+#### v5.41.0 ####
+* Phased events (Alchyr)
+* Fix incorrect height scaling of TinyCard in run history screen (Mistress Alison)
+* Fix log spam when viewing curse cards with cost (Alchyr)
+* Fix CN text when magic number is at start of line (akdream)
+* Add multi-card previews to AbtractCard (NellyDevo)
+* Fix order of rewards and custom rewards when saving and reloading (herbix)
+* Add NoCompendium annotation to remove cards from compendium (NellyDevo)
+* Add NoPools annotation to remove cards from reward pools (NellyDevo)
+* Add modify base block and base damage methods to CardMods (NellyDevo)
+* Fix energy icon rendering in card descriptions (Alchyr)
+  * Fix position when card is scaled
+  * Fix rotation and position when card is rotated
+  * Fix scale when card description gets shrunk for being long
+
+#### v5.42.0 ####
+* Fix CN card descriptions not shrinking (Alchyr)
+* CardModifiers (NellyDevo)
+  * Apply base stuff on initial application
+  * Render in SCV
+* Dynamic text block fixes (Mistress Alison)
+  * Reinitialize description if any dynamic variables updated
+  * Remove issues needing manual initializeDescription
+  * Remove need for -1 case for uninitialized values in compendium
+* Fix CN keywords added by basic CardModifiers (herbix)
+* Add option for custom events that end with a reward screen (herbix)
+* Add screen-space rendering postprocess (herbix/kiooeht)
+
+#### v5.42.1 ####
+* Fix screen shake (herbix)
+* Add safety checks to post-processing initialization (kiooeht)
+
+#### v5.42.2 ####
+* Fix post-processing blend function to not apply alpha again (kiooeht)
+* Fix post-processing rendering causing a crash on Mac (kiooeht)
+
+#### v5.43.0 ####
+* Fixrendering on super ultrawide (kiooeht)
+* Add custom multi-page FTUE (herbix)
+
+#### v5.44.0 ####
+* kill all command now actually always definitely kills (kiooeht)
+* Fix custom dynamic variables not being colored in the Armaments preview (kiooeht)
+* debug console command can now be used without arguments to toggle debug mode (kiooeht)
+* info console command can now be used with arguments to set true/false (kiooeht)
+* Add evalcode console command for running code via the console (kiooeht)
+* Fix CustomReward generating an extra card reward, altering rare change and affecting save/load (modargo)
+* Dynamic text blocks (Mistress Alison)
+  * Add support for custom dynamic text block checks
+  * Add extra Location cases for compendium and cards not owned by the player
+* Add modifyTitle support to TinyCards (Mistress Alison)
+
+#### v5.44.1 ####
+* Fix possible crash in other mods when using CustomReward (kiooeht)
+
+#### v5.45.0 ####
+* Fix kill all command softlocking Darklings and not stopping the Heart music (kiooeht)
+* Fix right-click release also triggering left-click release (kiooeht)
+  * This fixes bugs like SRV instantly closing when right-clicking the shop relic in shops
+* Let CustomReward accept TextureRegions for the icon (kiooeht)
+* Fix ReflectionHacks.getCachedField memory churn (kiooeht)
+* Allow Ctrl-V to paste into the console (kiooeht)
+* Fix evalcode command breaking if code doesn't have a return value (kiooeht)
+* Add beta art support for CustomCard (Alchyr)
+* Make anti-log spam patch slightly more interactable (Alchyr)
+* Add DraggableUI interface (Pandemonium)
+* Add controller navigation support to card library (herbix)
+* Update SafeDamageAllEnemies (Alchyr)
+* Fix memory churn caused by the constant in-combat particle effects (kiooeht)
+* Allow CustomCard to have different card art in SCV on upgrade (kiooeht/Vex)
+
+#### v5.46.0 ####
+* Dear ImGui (kiooeht)
+* CustomScreen (kiooeht)
+* Fix black screen when using post-processing effects and cursor is hidden (kiooeht)
+* Don't use energy when infinite energy is enabled (kiooeht)
+* Fix beta art defaulting to on (Alchyr)
+* Remove unnecessary log in memory churn patch (kiooeht)
+
+#### v5.46.1 ####
+* Fix crash when running multiple instances of the game (kiooeht)
+
+#### v5.47.0 ####
+* Allow evalcode command to access private fields and methods (kiooeht)
+* Add genericScreenOverlayReset helper to CustomScreen (kiooeht)
+* Fix Dear ImGui trying to load even when not enabled (kiooeht)
+* Refactor memory churn patch (kiooeht)
+* CardMods (Mistress Alison)
+  * Fix modifyBaseDamage rendering in combat and master deck
+  * Fix modifyBaseBlock rendering in combat and master deck
+  * Add modifyBaseMagic
+* Fix Chinese text rendering issues (Somdy)
+
+#### v5.48.0 ####
+* Minor fix to Chinese text rendering (Somdy)
+* Fix card energy font in single card popup (herbix)
+* Allow multiple player classes for an event (Alchyr)
+
+#### v5.49.0 ####
+* Fix unnecessary line deletion when rendering Chinese text (Somdy)
+* Fix functuation and tipbox height when rendering Chinese text (Somdy)
+* Add render hooks to CardMods when in SCV (NellyDevo)
+* Fix texture leak in CustomOrb (Alchyr)
+* Fix getPotion log spam (erasels)
+* Allow dynamic variables to check card during upgrade coloring (Nyoxide)
+* Fix GlowInfo priority not being accessible (kiooeht)
+
+#### v5.50.0 ####
+* Add additionalTooltips method to CardMods (Pandemonium)
+
+#### v5.51.0 ####
+* Fix CustomBottleRelic rendering on cards not scaling with resolution (kiooeht)
+* Don't require modid prefixes to be all lowercase (Alchyr)
+* Fix modifed base damage multi-upgrade cards showing inflated values in SCV (NellyDevo)
+* Fix modifyBaseMagic (Mistress Alison)
+* Add CardMods to Run History (Mistress Alison)
+* Fix CardMods crashing on load when they no longer exist (NellyDevo)
+* Add card descriptors to CardMods (NellyDevo)
+* Output stacktrace instead of silently accepting potion initialization errors (Alchyr)
+* Make ethereal exhaust order seeded (Alchyr)
+
+#### v5.51.1 ####
+* Fix card descriptor frame not accounting for CardMods in SCV (kiooeht)
+* Fix card descriptor dynamic frame for all cards, not just CustomCard (kiooeht)
+
+#### v5.52.0 ####
+* Fix basegame bug: SCV not displaying locked card art correctly (kiooeht)
+* Fix possible crash if SCV card name font ends up null (kiooeht)
+* Fix crash if other mods enable pedantic shaders (kiooeht)
+* Add convenience methods for phased event card selections (Alchyr)
+* Add ability to color dropdown menus (Pandemonium)
+* Fix incorrect width of custom dynamic variables in CN languages (Mwalls)
+* Add horizontal only toggle to  MultiCardPreview (NellyDevo)
+* Fix possible crash when removing CardMods (NellyDevo)
+* Add onCardModified hook for CardMods (NellyDevo)
+* Fix CardMod crash in run history (NellyDevo)
+* Add border glows to CardMods (NellyDevo)
+* Add onLoadedMisc hook to CustomCard (NellyDevo)
+* Add ModRadioButtonGroup (Mindbomber2)
+* Add support for large relic art to CustomRelic (Alchyr)
+* Fix offset of capitalized keyword prefixes (Alchyr)
+* Refactor CardMod base values (Alchyr)
+* Allow Ctrl, Shift, and Alt to be used as modifiers for opening the console (kiooeht)
+* Add hotkey config ui for opening ImGui (kiooeht/Piña Colada)
+* Stop ImGui hotkey activating while console is open (kiooeht)
+
+#### v5.52.1 ####
+* Fix CardMods getting removed when they shouldn't be (Mistress Alison/NellyDevo)
+* Fix base value modifier upgrade preview (Alchyr)
+
+#### v5.52.2 ####
+* Allow Ctrl, Shift, and Alt to be used on their own again for opening the console (kiooeht)
+
+#### v5.52.3 ####
+* Fix CardMod base value changes (Mistress Alison)
+* Fix border glow manager not testing for CardMod glows (NellyDevo)
+
+#### v5.53.0 ####
+* Make multiline relic descriptions work on character select screen (JohnnyBazooka89)
+* Don't fade limbo when clearing card queue (Alchyr)
+* Add repeat to dynamic text blocks (herbix)
+* Allow bonusCondition and spawnCondition to be repeated in AddEventParams (Alchyr)
+* Fix Choke power description not updating (SandTag)
+* Remove check for Focus when updating orb descriptions (SandTag)
+* Add scrolling tooltips for relics on SingleRelicView (SandTag)
+* Fix card descriptors and custom card frames not working together (Enbeon)
+* Add PostShopInitializeSubscriber (DandyLion)
+* Add pagination to shop relic grid (DandyLion)
+* Card in use now counts as "in hand" for dynamic text (Mistress Alison)
+* Fix CardMod render not working in SCV (Mistress Alison)
+* Add overload for addCharacter (Alchyr)
+* Nelly gets to keep her purple license
+  * Fix inconsistant CardMod application (NellyDevo)
+  * Add on battle start hook for CardMods (NellyDevo)
+  * Add addToBot and addToTop to CardMods (NellyDevo)
+  * Improve error handling with unserializable CardMods (NellyDevo)
+* Fix for ModRadioButtonGroup (Mindbomber2)
+* Fix magic number not resetting if a CardMod was applied once (herbix)
+* Fix TwitchVoter crashing sometimes (Alchyr)
+* Fix soft lock with endsWithRewardsUI events (Alchyr)
+* Fix queueExtraCard crash (erasels/kiooeht)
+* Fix provided CardMod localization (Rucodeby)
+
+#### v5.53.1 ####
+* Revert changes
+  * Add PostShopInitializeSubscriber (DandyLion)
+  * Add pagination to shop relic grid (DandyLion)
+
+#### v5.53.2 ####
+* Revert changes
+  * Fix magic number not resetting if a CardMod was applied once (herbix)
+    * Broke basegame cards like Halt
+
+#### v5.54.0 ####
+* Make basegame start relic upgrades replace the correct relic (erasels/kiooeht)
+* Make framebuffers nested (kiooeht)
+* Fix whatmod tooltip in the wrong position on SCV and SRV (kiooeht)
+
+#### v5.54.1 ####
+* Fix crash when inspecting single cards or relics in SCV/SRC (kiooeht)
 
 #### dev ####

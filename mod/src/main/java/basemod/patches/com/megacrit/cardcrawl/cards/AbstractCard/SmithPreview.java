@@ -7,7 +7,7 @@ import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.DescriptionLine;
 import com.megacrit.cardcrawl.core.Settings;
 
-import java.util.regex.Matcher;
+import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 
 @SpirePatch(
@@ -18,14 +18,38 @@ public class SmithPreview
 {
 	public static void Postfix(AbstractCard __instance)
 	{
+		ForEachDynamicVariable(__instance, (card, dv) -> {
+			if (dv.upgraded(card)) {
+				switch (dv.key()) {
+					case "D":
+						card.damage = dv.modifiedBaseValue(card);
+						break;
+					case "B":
+						card.block = dv.modifiedBaseValue(card);
+						break;
+					case "M":
+						card.magicNumber = dv.modifiedBaseValue(card);
+						break;
+				}
+				dv.setIsModified(card, true);
+			}
+		});
+		DynamicTextBlocks.DisplayingUpgradesField.displayingUpgrades.set(__instance, true);
+	}
+
+	public static void ForEachDynamicVariable(AbstractCard card, BiConsumer<AbstractCard, DynamicVariable> callback)
+	{
 		Pattern pattern;
+		int keyIndex;
 		if (Settings.lineBreakViaCharacter) {
 			pattern = Pattern.compile("\\$(.+)\\$\\$");
+			keyIndex = 1;
 		} else {
-			pattern = Pattern.compile("!(.+)!.*");
+			pattern = DynamicVariable.variablePattern;
+			keyIndex = 2;
 		}
 
-		for (DescriptionLine line : __instance.description) {
+		for (DescriptionLine line : card.description) {
 			String[] tokenized;
 			if (Settings.lineBreakViaCharacter) {
 				tokenized = line.getCachedTokenizedTextCN();
@@ -33,15 +57,15 @@ public class SmithPreview
 				tokenized = line.getCachedTokenizedText();
 			}
 			for (String word : tokenized) {
-				Matcher matcher = pattern.matcher(word);
-				if (matcher.find()) {
-					word = matcher.group(1);
+				java.util.regex.Matcher matcher = pattern.matcher(word);
+				if (matcher.find() || (Settings.lineBreakViaCharacter && word.equals("D"))) {
+					if (!word.equals("D")) {
+						word = matcher.group(keyIndex);
+					}
 
 					DynamicVariable dv = BaseMod.cardDynamicVariableMap.get(word);
 					if (dv != null) {
-						if (dv.upgraded(__instance)) {
-							dv.setIsModified(__instance, true);
-						}
+						callback.accept(card, dv);
 					}
 				}
 			}

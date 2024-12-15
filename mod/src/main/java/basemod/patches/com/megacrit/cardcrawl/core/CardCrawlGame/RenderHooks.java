@@ -1,6 +1,7 @@
 package basemod.patches.com.megacrit.cardcrawl.core.CardCrawlGame;
 
 import basemod.BaseMod;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.evacipated.cardcrawl.modthespire.lib.*;
@@ -64,10 +65,13 @@ public class RenderHooks {
 	    
 		@SpireInsertPatch(
 				locator=Locator.class,
-				localvars={"sb"}
+				localvars={"sb", "camera"}
 		)
-	    public static void Insert(Object __obj_instance, SpriteBatch sb) {
+	    public static void Insert(Object __obj_instance, SpriteBatch sb, OrthographicCamera camera) {
+			sb.setColor(Color.WHITE);
 	        BaseMod.publishPostRender(sb);
+			sb.setColor(Color.WHITE);
+			ApplyScreenPostProcessor.BeforeSpriteBatchEnd(sb, camera);
 	    }
 
 	    private static class Locator extends SpireInsertLocator

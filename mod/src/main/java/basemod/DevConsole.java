@@ -1,19 +1,18 @@
 package basemod;
 
 import basemod.devcommands.ConsoleCommand;
-import basemod.interfaces.PostEnergyRechargeSubscriber;
-import basemod.interfaces.PostInitializeSubscriber;
-import basemod.interfaces.PostRenderSubscriber;
-import basemod.interfaces.PostUpdateSubscriber;
-import basemod.interfaces.TextReceiver;
+import basemod.interfaces.*;
 import basemod.patches.com.megacrit.cardcrawl.helpers.input.ScrollInputProcessor.TextInput;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
+import com.badlogic.gdx.scenes.scene2d.utils.UIUtils;
+import com.badlogic.gdx.utils.Clipboard;
 import com.evacipated.cardcrawl.modthespire.lib.SpireConfig;
 import com.megacrit.cardcrawl.core.Settings;
 import com.megacrit.cardcrawl.helpers.ImageMaster;
@@ -25,10 +24,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class DevConsole
 implements PostEnergyRechargeSubscriber, PostInitializeSubscriber, PostRenderSubscriber, PostUpdateSubscriber, TextReceiver {
@@ -56,7 +52,9 @@ implements PostEnergyRechargeSubscriber, PostInitializeSubscriber, PostRenderSub
 
 	public static boolean enabled = false;
 	public static boolean visible = false;
-	public static int toggleKey = Keys.GRAVE;
+	@Deprecated
+	public static int toggleKey = Keys.UNKNOWN;
+	public static KeyWithMods newToggleKey = new KeyWithMods(Keys.GRAVE);
 	public static String currentText = "";
 
 	private static boolean wasBackspace = false;
@@ -192,7 +190,7 @@ implements PostEnergyRechargeSubscriber, PostInitializeSubscriber, PostRenderSub
 
 	@Override
 	public boolean acceptCharacter(char c) {
-		return consoleFont.getData().hasGlyph(c) && !(Keys.toString(toggleKey) != null && Keys.toString(toggleKey).equals("" + c));
+		return consoleFont.getData().hasGlyph(c) && !(Keys.toString(newToggleKey.keycode) != null && Keys.toString(newToggleKey.keycode).equals("" + c));
 	}
 
 	@Override
@@ -212,6 +210,12 @@ implements PostEnergyRechargeSubscriber, PostInitializeSubscriber, PostRenderSub
 
 	@Override
 	public boolean onKeyDown(int keycode) {
+		if (keycode == Input.Keys.V && UIUtils.ctrl()) {
+			System.out.println("PASTE");
+			Clipboard clipboard = Gdx.app.getClipboard();
+			setText(getCurrentText().concat(clipboard.getContents()));
+		}
+
 		if (AutoComplete.enabled) {
 			//I wanted to use a switch, but not constant :(
 			//can these even be changed? idk
@@ -261,7 +265,7 @@ implements PostEnergyRechargeSubscriber, PostInitializeSubscriber, PostRenderSub
 
 	@Override
 	public void receivePostUpdate() {
-		if (enabled && Gdx.input.isKeyJustPressed(toggleKey)) {
+		if (enabled && newToggleKey.isJustPressed()) {
 			AutoComplete.reset();
 
 			// only allow opening console when enabled but allow closing the console anytime
@@ -286,6 +290,89 @@ implements PostEnergyRechargeSubscriber, PostInitializeSubscriber, PostRenderSub
 	@Override
 	public boolean isDone() {
 		return !visible;
+	}
+
+	public static class KeyWithMods
+	{
+		public int keycode;
+		public boolean ctrl;
+		public boolean shift;
+		public boolean alt;
+
+		public KeyWithMods(int keycode, boolean ctrl, boolean shift, boolean alt)
+		{
+			this.keycode = keycode;
+			this.ctrl = ctrl;
+			this.shift = shift;
+			this.alt = alt;
+		}
+		public KeyWithMods(int keycode)
+		{
+			this(keycode, false, false, false);
+		}
+
+		public boolean isJustPressed()
+		{
+			if (Gdx.input.isKeyJustPressed(keycode)) {
+				if (ctrl != (Gdx.input.isKeyPressed(Keys.CONTROL_LEFT) || Gdx.input.isKeyPressed(Keys.CONTROL_RIGHT))) {
+					return false;
+				}
+				if (shift != (Gdx.input.isKeyPressed(Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Keys.SHIFT_RIGHT))) {
+					return false;
+				}
+				if (alt != (Gdx.input.isKeyPressed(Keys.ALT_LEFT) || Gdx.input.isKeyPressed(Keys.ALT_RIGHT))) {
+					return false;
+				}
+				return true;
+			}
+			return false;
+		}
+
+		@Override
+		public String toString()
+		{
+			StringBuilder sb = new StringBuilder(Keys.toString(keycode));
+			if (alt && (keycode != Keys.ALT_LEFT && keycode != Keys.ALT_RIGHT)) {
+				sb.insert(0, "Alt+");
+			}
+			if (shift && (keycode != Keys.SHIFT_LEFT && keycode != Keys.SHIFT_RIGHT)) {
+				sb.insert(0, "Shift+");
+			}
+			if (ctrl && (keycode != Keys.CONTROL_LEFT  && keycode != Keys.CONTROL_RIGHT)) {
+				sb.insert(0, "Ctrl+");
+			}
+			return sb.toString();
+		}
+
+		public String save()
+		{
+			return Keys.toString(keycode) +
+					"\0" + ctrl +
+					"\0" + shift +
+					"\0" + alt;
+		}
+
+		public static KeyWithMods load(String str)
+		{
+			String[] split = str.split("\0");
+			KeyWithMods ret = new KeyWithMods(Keys.GRAVE);
+			if (split.length >= 1) {
+				ret.keycode = Keys.valueOf(split[0]);
+				if (split.length >= 4) {
+					ret.ctrl = Boolean.parseBoolean(split[1]);
+					ret.shift = Boolean.parseBoolean(split[2]);
+					ret.alt = Boolean.parseBoolean(split[3]);
+				}
+				if (ret.keycode == Keys.CONTROL_LEFT || ret.keycode == Keys.CONTROL_RIGHT) {
+					ret.ctrl = true;
+				} else if (ret.keycode == Keys.SHIFT_LEFT || ret.keycode == Keys.SHIFT_RIGHT) {
+					ret.shift = true;
+				} else if (ret.keycode == Keys.ALT_LEFT || ret.keycode == Keys.ALT_RIGHT) {
+					ret.alt = true;
+				}
+			}
+			return ret;
+		}
 	}
 
 	public static class PriorCommandsList extends ArrayList<String>

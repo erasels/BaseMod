@@ -8,13 +8,15 @@ import basemod.helpers.dynamicvariables.BlockVariable;
 import basemod.helpers.dynamicvariables.DamageVariable;
 import basemod.helpers.dynamicvariables.MagicNumberVariable;
 import basemod.interfaces.*;
+import basemod.patches.com.megacrit.cardcrawl.cards.AbstractCard.RenderDescriptionEnergy;
 import basemod.patches.com.megacrit.cardcrawl.helpers.TopPanel.TopPanelHelper;
 import basemod.patches.com.megacrit.cardcrawl.screens.select.GridCardSelectScreen.GridCardSelectScreenFields;
 import basemod.patches.com.megacrit.cardcrawl.unlock.UnlockTracker.CountModdedUnlockCards;
+import basemod.patches.imgui.ImGuiPatches;
 import basemod.patches.whatmod.WhatMod;
 import basemod.screens.ModalChoiceScreen;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Version;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Color;
@@ -71,6 +73,7 @@ import com.megacrit.cardcrawl.shop.StorePotion;
 import com.megacrit.cardcrawl.shop.StoreRelic;
 import com.megacrit.cardcrawl.unlock.AbstractUnlock;
 import com.megacrit.cardcrawl.unlock.UnlockTracker;
+import imgui.ImGui;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.NotFoundException;
@@ -156,6 +159,9 @@ public class BaseMod {
 	private static ArrayList<OnPlayerLoseBlockSubscriber> onPlayerLoseBlockSubscribers;
 	private static ArrayList<OnPlayerDamagedSubscriber> onPlayerDamagedSubscribers;
 	private static ArrayList<OnCreateDescriptionSubscriber> onCreateDescriptionSubscribers;
+	private static ArrayList<OnPlayerTurnStartSubscriber> onPlayerTurnStartSubscribers;
+	private static ArrayList<OnPlayerTurnStartPostDrawSubscriber> onPlayerTurnStartPostDrawSubscribers;
+	private static ArrayList<ImGuiSubscriber> imGuiSubscribers;
 
 	private static ArrayList<AbstractCard> redToAdd;
 	private static ArrayList<String> redToRemove;
@@ -242,6 +248,7 @@ public class BaseMod {
 	private static HashMap<AbstractPlayer.PlayerClass, Integer> maxUnlockLevel;
 
 	private static HashMap<String, CustomSavableRaw> customSaveFields = new HashMap<>();
+	private static HashMap<AbstractDungeon.CurrentScreen, CustomScreen> customScreens = new HashMap<>();
 
 	private static OrthographicCamera animationCamera;
 	private static ModelBatch batch;
@@ -249,6 +256,8 @@ public class BaseMod {
 	private static FrameBuffer animationBuffer;
 	private static Texture animationTexture;
 	private static TextureRegion animationTextureRegion;
+
+	public static boolean fixesEnabled = true;
 
 	public static final String CONFIG_FILE = "basemod-config";
 	private static SpireConfig config;
@@ -270,9 +279,13 @@ public class BaseMod {
 
 	private static SpireConfig makeConfig() {
 		Properties defaultProperties = new Properties();
-		defaultProperties.setProperty("console-key", "`");
+		defaultProperties.setProperty("console-key", DevConsole.newToggleKey.save());
 		defaultProperties.setProperty("autocomplete-enabled", Boolean.toString(true));
 		defaultProperties.setProperty("whatmod-enabled", Boolean.toString(true));
+		defaultProperties.setProperty("basemod-fixes", Boolean.toString(true));
+		defaultProperties.setProperty("imgui-search", Boolean.toString(true));
+		defaultProperties.setProperty("imgui-actionqueue", Boolean.toString(true));
+		defaultProperties.setProperty("imgui-key", ImGuiPatches.toggleKey.save());
 
 		try {
 			SpireConfig retConfig = new SpireConfig(BaseModInit.MODNAME, CONFIG_FILE, defaultProperties);
@@ -295,7 +308,7 @@ public class BaseMod {
 		}
 	}
 
-	private static Boolean getBoolean(String key) {
+	static Boolean getBoolean(String key) {
 		return config.getBool(key);
 	}
 
@@ -316,7 +329,7 @@ public class BaseMod {
 
 		String consoleKey = getString("console-key");
 		if (consoleKey != null) {
-			DevConsole.toggleKey = Keys.valueOf(consoleKey);
+			DevConsole.newToggleKey = DevConsole.KeyWithMods.load(consoleKey);
 		}
 		Boolean consoleEnabled = getBoolean("console-enabled");
 		if (consoleEnabled != null) {
@@ -332,6 +345,12 @@ public class BaseMod {
 		if (whatmodEnabled != null) {
 			WhatMod.enabled = whatmodEnabled;
 		}
+		String imguiKey = getString("imgui-key");
+		if (imguiKey != null) {
+			ImGuiPatches.toggleKey = DevConsole.KeyWithMods.load(imguiKey);
+		}
+
+		fixesEnabled = getBoolean("basemod-fixes");
 	}
 
 	public static boolean isBaseGameCharacter(AbstractPlayer c) {
@@ -481,6 +500,9 @@ public class BaseMod {
 		onPlayerLoseBlockSubscribers = new ArrayList<>();
 		onPlayerDamagedSubscribers = new ArrayList<>();
 		onCreateDescriptionSubscribers = new ArrayList<>();
+		onPlayerTurnStartSubscribers = new ArrayList<>();
+		onPlayerTurnStartPostDrawSubscribers = new ArrayList<>();
+		imGuiSubscribers = new ArrayList<>();
 	}
 
 	// initializeCardLists -
@@ -973,8 +995,9 @@ public class BaseMod {
 	 */
 	public static float calculateCardDamage(AbstractPlayer player, AbstractMonster mo, AbstractCard c, float tmp) {
 		if (c instanceof CustomCard) {
+			float oldVal = tmp;
 			float newVal = ((CustomCard) c).calculateModifiedCardDamage(player, mo, tmp);
-			if ((int) newVal != c.baseDamage) {
+			if (newVal != oldVal) {
 				c.isDamageModified = true;
 			}
 			return newVal;
@@ -1291,17 +1314,25 @@ public class BaseMod {
 						.create()
 		);
 	}
+	public static void addEvent(String eventID, Class<? extends AbstractEvent> eventClass, String... dungeonIDs) {
+		addEvent(
+				new AddEventParams.Builder(eventID, eventClass)
+						.dungeonIDs(dungeonIDs)
+						.create()
+		);
+	}
 
 	public static void addEvent(AddEventParams params) {
 		EventUtils.registerEvent(
 				params.eventID,
 				params.eventClass,
-				params.playerClass,
+				params.playerClasses.toArray(new AbstractPlayer.PlayerClass[0]),
 				params.dungeonIDs.toArray(new String[0]),
 				params.spawnCondition,
 				params.overrideEventID,
 				params.bonusCondition,
-				params.eventType
+				params.eventType,
+				params
 		);
 	}
 
@@ -1693,6 +1724,12 @@ public class BaseMod {
 									String portraitPath,
 									PlayerClass characterID) {
 		addCharacter(character, selectButtonPath, portraitPath, characterID, null);
+	}
+
+	public static void addCharacter(AbstractPlayer character,
+									String selectButtonPath,
+									String portraitPath) {
+		addCharacter(character, selectButtonPath, portraitPath, character.chosenClass, null);
 	}
 
 	public static TextureAtlas.AtlasRegion getCardSmallEnergy() {
@@ -2169,6 +2206,27 @@ public class BaseMod {
 	}
 
 	//
+	// Screens
+	//
+
+	public static void addCustomScreen(CustomScreen screen) {
+		customScreens.put(screen.curScreen(), screen);
+	}
+
+	public static CustomScreen getCustomScreen(AbstractDungeon.CurrentScreen screen) {
+		return customScreens.get(screen);
+	}
+
+	public static boolean openCustomScreen(AbstractDungeon.CurrentScreen screen, Object... args) {
+		CustomScreen customScreen = getCustomScreen(screen);
+		if (customScreen != null) {
+			customScreen.open(args);
+			return true;
+		}
+		return false;
+	}
+
+	//
 	// Publishers
 	//
 
@@ -2240,6 +2298,8 @@ public class BaseMod {
 
 		// setup the necessary bits for custom animations to work
 		setupAnimationGfx();
+
+		RenderDescriptionEnergy.AdjustEnergyWidth.PERIOD_SPACE = LocalizedStrings.PERIOD + " ";
 
 		// Publish
 		for (PostInitializeSubscriber sub : postInitializeSubscribers) {
@@ -2360,6 +2420,7 @@ public class BaseMod {
 			sub.receivePostUpdate();
 		}
 		unsubscribeLaterHelper(PostUpdateSubscriber.class);
+		DraggableUI.update();
 	}
 
 	// publishPostDungeonUpdate -
@@ -2505,6 +2566,12 @@ public class BaseMod {
 			path = String.format("localization/basemod/%s/customMods.json", Settings.GameLanguage.ENG.name().toLowerCase());
 		}
 		BaseMod.loadCustomStringsFile(RunModStrings.class, path);
+
+		path = String.format("localization/basemod/%s/cardMods.json", Settings.language.name().toLowerCase());
+		if (!Gdx.files.internal(path).exists()) {
+			path = String.format("localization/basemod/%s/cardMods.json", Settings.GameLanguage.ENG.name().toLowerCase());
+		}
+		BaseMod.loadCustomStringsFile(UIStrings.class, path);
 
 		for (EditStringsSubscriber sub : editStringsSubscribers) {
 			sub.receiveEditStrings();
@@ -2745,6 +2812,32 @@ public class BaseMod {
 		return rawDescription;
 	}
 
+	public static void publishOnPlayerTurnStart() {
+		for (OnPlayerTurnStartSubscriber sub : onPlayerTurnStartSubscribers) {
+			sub.receiveOnPlayerTurnStart();
+		}
+
+		unsubscribeLaterHelper(OnPlayerTurnStartSubscriber.class);
+	}
+
+	public static void publishOnPlayerTurnStartPostDraw() {
+		for (OnPlayerTurnStartPostDrawSubscriber sub : onPlayerTurnStartPostDrawSubscribers) {
+			sub.receiveOnPlayerTurnStartPostDraw();
+		}
+
+		unsubscribeLaterHelper(OnPlayerTurnStartPostDrawSubscriber.class);
+	}
+
+	public static void publishImGui() {
+		for (ImGuiSubscriber sub : imGuiSubscribers) {
+			ImGui.pushID(sub.getClass().getName());
+			sub.receiveImGui();
+			ImGui.popID();
+		}
+
+		unsubscribeLaterHelper(ImGuiSubscriber.class);
+	}
+
 	//
 	// Subscription handlers
 	//
@@ -2820,6 +2913,9 @@ public class BaseMod {
 		subscribeIfInstance(onPlayerLoseBlockSubscribers, sub, OnPlayerLoseBlockSubscriber.class);
 		subscribeIfInstance(onPlayerDamagedSubscribers, sub, OnPlayerDamagedSubscriber.class);
 		subscribeIfInstance(onCreateDescriptionSubscribers, sub, OnCreateDescriptionSubscriber.class);
+		subscribeIfInstance(onPlayerTurnStartSubscribers, sub, OnPlayerTurnStartSubscriber.class);
+		subscribeIfInstance(onPlayerTurnStartPostDrawSubscribers, sub, OnPlayerTurnStartPostDrawSubscriber.class);
+		subscribeIfInstance(imGuiSubscribers, sub, ImGuiSubscriber.class);
 	}
 
 	// subscribe -
@@ -2917,6 +3013,12 @@ public class BaseMod {
 			onPlayerDamagedSubscribers.add((OnPlayerDamagedSubscriber) sub);
 		} else if (additionClass.equals(OnCreateDescriptionSubscriber.class)) {
 			onCreateDescriptionSubscribers.add((OnCreateDescriptionSubscriber) sub);
+		} else if (additionClass.equals(OnPlayerTurnStartSubscriber.class)) {
+			onPlayerTurnStartSubscribers.add((OnPlayerTurnStartSubscriber) sub);
+		} else if (additionClass.equals(OnPlayerTurnStartPostDrawSubscriber.class)) {
+			onPlayerTurnStartPostDrawSubscribers.add((OnPlayerTurnStartPostDrawSubscriber) sub);
+		} else if (additionClass.equals(ImGuiSubscriber.class)) {
+			imGuiSubscribers.add((ImGuiSubscriber) sub);
 		}
 	}
 
@@ -2969,6 +3071,9 @@ public class BaseMod {
 		unsubscribeIfInstance(onPlayerLoseBlockSubscribers, sub, OnPlayerLoseBlockSubscriber.class);
 		unsubscribeIfInstance(onPlayerDamagedSubscribers, sub, OnPlayerDamagedSubscriber.class);
 		unsubscribeIfInstance(onCreateDescriptionSubscribers, sub, OnCreateDescriptionSubscriber.class);
+		unsubscribeIfInstance(onPlayerTurnStartSubscribers, sub, OnPlayerTurnStartSubscriber.class);
+		unsubscribeIfInstance(onPlayerTurnStartPostDrawSubscribers, sub, OnPlayerTurnStartPostDrawSubscriber.class);
+		unsubscribeIfInstance(imGuiSubscribers, sub, ImGuiSubscriber.class);
 	}
 
 	// unsubscribe -
@@ -3068,6 +3173,12 @@ public class BaseMod {
 			onPlayerDamagedSubscribers.remove(sub);
 		} else if (removalClass.equals(OnCreateDescriptionSubscriber.class)) {
 			onCreateDescriptionSubscribers.remove(sub);
+		} else if (removalClass.equals(OnPlayerTurnStartSubscriber.class)) {
+			onPlayerTurnStartSubscribers.remove(sub);
+		} else if (removalClass.equals(OnPlayerTurnStartPostDrawSubscriber.class)) {
+			onPlayerTurnStartPostDrawSubscribers.remove(sub);
+		} else if (removalClass.equals(ImGuiSubscriber.class)) {
+			imGuiSubscribers.remove(sub);
 		}
 	}
 

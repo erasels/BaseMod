@@ -1,18 +1,25 @@
 package basemod.abstracts;
 
+import basemod.helpers.CardBorderGlowManager;
+import basemod.helpers.TooltipInfo;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.megacrit.cardcrawl.actions.AbstractGameAction;
 import com.megacrit.cardcrawl.actions.utility.UseCardAction;
 import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
 import com.megacrit.cardcrawl.cards.DamageInfo;
 import com.megacrit.cardcrawl.core.AbstractCreature;
+import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.monsters.AbstractMonster;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public abstract class AbstractCardModifier implements Comparable<AbstractCardModifier> {
     public int priority = 0;
@@ -46,6 +53,11 @@ public abstract class AbstractCardModifier implements Comparable<AbstractCardMod
      * all card parameters pass the instance of the card which the mod is applied to.
      * AbstractMonster parameters will pass null when called from ApplyPowers.
      */
+    //called before any damage increases, will also render outside the hand
+    public float modifyBaseDamage(float damage, DamageInfo.DamageType type, AbstractCard card, AbstractMonster target) {
+        return damage;
+    }
+
     //called before related power functions, for flat increases, to happen before vulnerable.
     public float modifyDamage(float damage, DamageInfo.DamageType type, AbstractCard card, AbstractMonster target) {
         return damage;
@@ -54,6 +66,11 @@ public abstract class AbstractCardModifier implements Comparable<AbstractCardMod
     //called before "final" power functions, to apply percentage increases, but before things like intangible.
     public float modifyDamageFinal(float damage, DamageInfo.DamageType type, AbstractCard card, AbstractMonster target) {
         return damage;
+    }
+
+    //called before any block increases, will also render outside the hand
+    public float modifyBaseBlock(float block, AbstractCard card) {
+        return block;
     }
 
     //called before power functions, for flat increases.
@@ -66,12 +83,33 @@ public abstract class AbstractCardModifier implements Comparable<AbstractCardMod
         return block;
     }
 
+    //called before any magic number increases, will also render outside the hand
+    public float modifyBaseMagic(float magic, AbstractCard card) {
+        return magic;
+    }
+
     /**
      * Intercepts the creation of a card's description at the time that initializeDescription is called.
      * rawDescription can be manipulated freely at this point, and then the game will parse it as normal.
      */
     public String modifyDescription(String rawDescription, AbstractCard card) {
         return rawDescription;
+    }
+
+    /**
+     * Intercepts the rendering of a card's name at the time that renderTitle is called.
+     * cardName can be manipulated freely at this point, and then the game will parse it as normal.
+     */
+    public String modifyName(String cardName, AbstractCard card) {
+        return cardName;
+    }
+
+    /**
+     * Called just before Basemod renders the other additional tooltips the card may have,
+     * at the end of the card's renderKeywords method.
+     */
+    public List<TooltipInfo> additionalTooltips(AbstractCard card) {
+        return null;
     }
 
     /**
@@ -131,6 +169,10 @@ public abstract class AbstractCardModifier implements Comparable<AbstractCardMod
 
     }
 
+    public void onSingleCardViewRender(AbstractCard card, SpriteBatch sb) {
+
+    }
+
     /**
      * triggers at the end of the player's turn. The group passed is the current location of the card at the
      * time that this method is called.
@@ -184,6 +226,36 @@ public abstract class AbstractCardModifier implements Comparable<AbstractCardMod
     }
 
     /**
+     * return a list of words to be rendered with the card's card type
+     */
+    public List<String> extraDescriptors(AbstractCard card) {
+        return Collections.emptyList();
+    }
+
+    /**
+     * triggers on every modifier present on a card after any changes to the list of modifiers on a card changes.
+     */
+    public void onCardModified(AbstractCard card) {
+
+    }
+
+    /**
+     * Behaves the same as StSLib's StartupCard.
+     * Triggers at the start of battle. Return true to have the card flash on the screen.
+     */
+    public boolean onBattleStart(AbstractCard card) {
+        return false;
+    }
+
+    /**
+     * return a Color if the cardmod should cause the card to glow a different color than it usually does. This should return
+     * null if it doesn't want the card to be affected.
+     */
+    public Color getGlow(AbstractCard card) {
+        return null;
+    }
+
+    /**
      * lower number = calculates first. For list sorting purposes. Don't override. Or do, I'm a comment, not a cop.
      */
     @Override
@@ -201,5 +273,13 @@ public abstract class AbstractCardModifier implements Comparable<AbstractCardMod
     @Retention(RetentionPolicy.RUNTIME)
     public @interface SaveIgnore
     {
+    }
+
+    public void addToTop(AbstractGameAction action) {
+        AbstractDungeon.actionManager.addToTop(action);
+    }
+
+    public void addToBot(AbstractGameAction action) {
+        AbstractDungeon.actionManager.addToBottom(action);
     }
 }

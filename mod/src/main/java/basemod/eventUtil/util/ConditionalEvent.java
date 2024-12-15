@@ -1,5 +1,7 @@
 package basemod.eventUtil.util;
 
+import basemod.eventUtil.AddEventParams;
+import basemod.patches.com.megacrit.cardcrawl.events.AbstractEvent.AdditionalEventParameters;
 import com.megacrit.cardcrawl.characters.AbstractPlayer;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.events.AbstractEvent;
@@ -13,15 +15,23 @@ import static basemod.eventUtil.EventUtils.eventLogger;
 public class ConditionalEvent<T extends AbstractEvent> {
     public Class<T> eventClass;
     public AbstractPlayer.PlayerClass playerClass;
+    public AbstractPlayer.PlayerClass[] playerClasses;
     public Condition spawnCondition;
     public List<String> actIDs;
 
     public String overrideEvent = "";
 
-    public ConditionalEvent(Class<T> eventClass, AbstractPlayer.PlayerClass playerClass, Condition spawnCondition, String[] actIDs) {
+    private final AddEventParams additionalParams;
+
+    public ConditionalEvent(Class<T> eventClass, AbstractPlayer.PlayerClass playerClass, Condition spawnCondition, String[] actIDs, AddEventParams additionalParams) {
+        this(eventClass, new AbstractPlayer.PlayerClass[] { playerClass }, spawnCondition, actIDs, additionalParams);
+    }
+    public ConditionalEvent(Class<T> eventClass, AbstractPlayer.PlayerClass[] playerClasses, Condition spawnCondition, String[] actIDs, AddEventParams additionalParams) {
         this.eventClass = eventClass;
-        this.playerClass = playerClass;
+        this.playerClass = playerClasses.length == 0 ? null : playerClasses[0];
+        this.playerClasses = playerClasses;
         this.spawnCondition = spawnCondition;
+        this.additionalParams = additionalParams;
 
         if (spawnCondition == null)
             this.spawnCondition = () -> true;
@@ -31,7 +41,9 @@ public class ConditionalEvent<T extends AbstractEvent> {
 
     public AbstractEvent getEvent() {
         try {
-            return eventClass.getConstructor().newInstance();
+            AbstractEvent event = eventClass.getConstructor().newInstance();
+            AdditionalEventParameters.additionalParameters.set(event, additionalParams);
+            return event;
         } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             eventLogger.info("Failed to instantiate event " + eventClass.getName());
             e.printStackTrace();
@@ -41,8 +53,18 @@ public class ConditionalEvent<T extends AbstractEvent> {
 
     public boolean isValid() {
         return (actIDs.isEmpty() || actIDs.contains(AbstractDungeon.id)) &&
-                (spawnCondition.test()) &&
-                (playerClass == null || AbstractDungeon.player.chosenClass == playerClass);
+                spawnCondition.test() &&
+                playerMatch();
+    }
+    public boolean playerMatch() {
+        if (playerClass == null)
+            return true;
+
+        for (AbstractPlayer.PlayerClass pClass : playerClasses)
+            if (AbstractDungeon.player.chosenClass == pClass)
+                return true;
+
+        return false;
     }
 
     @Override

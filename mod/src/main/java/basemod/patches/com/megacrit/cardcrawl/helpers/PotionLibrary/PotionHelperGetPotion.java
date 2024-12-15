@@ -20,13 +20,13 @@ public class PotionHelperGetPotion {
     @SpireInsertPatch(locator = Locator.class)
     public static SpireReturn<?> patch(String name) {
         //If this gets called, no potion has been returned yet
-		Class possiblePotion = BaseMod.getPotionClass(name);
+		Class<? extends AbstractPotion> possiblePotion = BaseMod.getPotionClass(name);
 		if(possiblePotion != null) {
 			logger.info("Getting custom potion: " + name);
 			try {
 				return SpireReturn.Return(possiblePotion.newInstance());
 			} catch (Exception e) {
-				logger.warn(e.getMessage());
+				logger.catching(e);
 			}
 		}
 

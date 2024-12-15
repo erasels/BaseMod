@@ -24,7 +24,7 @@ public class RenderCustomDynamicVariableCN
 	)
 	public static void Insert(SingleCardViewPopup __instance, SpriteBatch sb, AbstractCard card, @ByRef String[] tmp)
 	{
-		if (tmp[0].startsWith("$")) {
+		if (tmp[0].startsWith("$") || tmp[0].equals("D")) {
 			String key = tmp[0];
 
 			Pattern pattern = Pattern.compile("\\$(.+)\\$\\$");
@@ -36,13 +36,14 @@ public class RenderCustomDynamicVariableCN
 			DynamicVariable dv = BaseMod.cardDynamicVariableMap.get(key);
 			if (dv != null) {
 				if (dv.isModified(card)) {
-					if (dv.value(card) >= dv.baseValue(card)) {
+					if (dv.value(card) >= dv.modifiedBaseValue(card)) {
 						tmp[0] = "[#" + dv.getIncreasedValueColor().toString() + "]" + Integer.toString(dv.value(card)) + "[]";
 					} else {
 						tmp[0] = "[#" + dv.getDecreasedValueColor().toString() + "]" + Integer.toString(dv.value(card)) + "[]";
 					}
 				} else {
-					tmp[0] = Integer.toString(dv.baseValue(card));
+					//cardmods affect base variables
+					tmp[0] = Integer.toString(dv.modifiedBaseValue(card));
 				}
 			}
 		}

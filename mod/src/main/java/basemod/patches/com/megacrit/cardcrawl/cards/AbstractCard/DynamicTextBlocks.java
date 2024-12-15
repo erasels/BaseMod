@@ -1,27 +1,39 @@
 package basemod.patches.com.megacrit.cardcrawl.cards.AbstractCard;
 
 import basemod.BaseMod;
+import basemod.helpers.CardModifierManager;
 import com.evacipated.cardcrawl.modthespire.lib.*;
+import com.megacrit.cardcrawl.actions.GameActionManager;
 import com.megacrit.cardcrawl.cards.AbstractCard;
 import com.megacrit.cardcrawl.cards.CardGroup;
 import com.megacrit.cardcrawl.core.CardCrawlGame;
 import com.megacrit.cardcrawl.dungeons.AbstractDungeon;
 import com.megacrit.cardcrawl.screens.ExhaustPileViewScreen;
+import com.megacrit.cardcrawl.screens.SingleCardViewPopup;
 import javassist.CannotCompileException;
 import javassist.CtBehavior;
 import javassist.expr.ExprEditor;
 import javassist.expr.MethodCall;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 
 public class DynamicTextBlocks {
     private static final String REGEX = "\\{!.*?!\\|.*?}";
     private static final String DYNAMIC_KEY = "{@@}";
     private static final Pattern PATTERN = Pattern.compile(REGEX);
+    private static final HashMap<String, Function<AbstractCard, Integer>> customChecks = new HashMap<>();
 
-    //TODO: Efficiency improvements?
+    public static void registerCustomCheck(String s, Function<AbstractCard, Integer> f) {
+        if (s.charAt(0) != '!' && !s.endsWith("!")) {
+            s = "!" + s + "!";
+        }
+        customChecks.put(s, f);
+    }
 
     //Spire Field for fixing the Location var in ExhaustPileViewScreen thanks to the fact it returns a copy of the card that isn't actually in the Exhaust pile when you pull up the screen
     @SpirePatch(clz= AbstractCard.class, method=SpirePatch.CLASS)
@@ -33,6 +45,13 @@ public class DynamicTextBlocks {
     @SpirePatch(clz= AbstractCard.class, method=SpirePatch.CLASS)
     public static class DynamicTextField {
         public static final SpireField<Boolean> isDynamic = new SpireField<>(() -> Boolean.FALSE);
+        public static final SpireField<String> varData = new SpireField<>(() -> "");
+    }
+
+    //Spire Field for if displayUpgrades was called
+    @SpirePatch(clz= AbstractCard.class, method=SpirePatch.CLASS)
+    public static class DisplayingUpgradesField {
+        public static final SpireField<Boolean> displayingUpgrades = new SpireField<>(() -> Boolean.FALSE);
     }
 
     //When we render said card copy, set its field and initialize description
@@ -42,7 +61,6 @@ public class DynamicTextBlocks {
         public static void setField(ExhaustPileViewScreen __instance, AbstractCard toAdd) {
             if (DynamicTextField.isDynamic.get(toAdd)) {
                 ExhaustViewFixField.exhaustViewCopy.set(toAdd, true);
-                toAdd.initializeDescription();
             }
         }
 
@@ -51,42 +69,6 @@ public class DynamicTextBlocks {
             public int[] Locate(CtBehavior ctMethodToPatch) throws Exception {
                 Matcher finalMatcher = new Matcher.MethodCallMatcher(CardGroup.class, "addToBottom");
                 return LineFinder.findInOrder(ctMethodToPatch, finalMatcher);
-            }
-        }
-    }
-
-    //Allows dynamic text to work with powers while in your hand and when targeting enemies
-    @SpirePatch(clz = AbstractCard.class, method = "applyPowers")
-    @SpirePatch(clz = AbstractCard.class, method = "calculateCardDamage")
-    public static class UpdateTextForPowers {
-        @SpirePostfixPatch
-        public static void updateAfterVarChange(AbstractCard __instance) {
-            if (DynamicTextField.isDynamic.get(__instance)) {
-                __instance.initializeDescription();
-            }
-        }
-    }
-
-    //Allows !L! to set its location properly by forcing an update when the deck is initialized at the start of combat
-    @SpirePatch(clz = CardGroup.class, method = "initializeDeck")
-    public static class UpdateTextOnDeckCreation {
-        @SpirePostfixPatch()
-        public static void updateAfterAdding(CardGroup __instance, CardGroup masterDeck) {
-            for (AbstractCard c : __instance.group) {
-                if (DynamicTextField.isDynamic.get(c)) {
-                    c.initializeDescription();
-                }
-            }
-        }
-    }
-
-    //Force a Location update when a card is exhausted.
-    @SpirePatch(clz = CardGroup.class, method = "moveToExhaustPile")
-    public static class UpdateTextOnExhaust{
-        @SpirePostfixPatch()
-        public static void updateAfter(CardGroup __instance, AbstractCard c) {
-            if (DynamicTextField.isDynamic.get(c)) {
-                c.initializeDescription();
             }
         }
     }
@@ -106,6 +88,49 @@ public class DynamicTextBlocks {
                 }
             };
         }
+    }
+
+    //Force an update at render time if the values have changed since we last checked
+    @SpirePatch2(clz = AbstractCard.class, method = "renderDescription")
+    @SpirePatch2(clz = AbstractCard.class, method = "renderDescriptionCN")
+    public static class UpdateOnRender {
+        @SpirePrefixPatch
+        public static void onRender(AbstractCard __instance) {
+            if (DynamicTextField.isDynamic.get(__instance)) {
+                String varData = parseVarData(__instance);
+                if (!DynamicTextField.varData.get(__instance).equals(varData)) {
+                    DynamicTextField.varData.set(__instance, varData);
+                    __instance.initializeDescription();
+                }
+            }
+        }
+    }
+
+    //Force an update at render time if the values have changed since we last checked, SCV style
+    @SpirePatch2(clz = SingleCardViewPopup.class, method = "renderDescription")
+    @SpirePatch2(clz = SingleCardViewPopup.class, method = "renderDescriptionCN")
+    public static class UpdateOnRenderSCV {
+        @SpirePrefixPatch
+        public static void onRender(SingleCardViewPopup __instance, AbstractCard ___card) {
+            if (DynamicTextField.isDynamic.get(___card)) {
+                String varData = parseVarData(___card);
+                if (!DynamicTextField.varData.get(___card).equals(varData)) {
+                    DynamicTextField.varData.set(___card, varData);
+                    ___card.initializeDescription();
+                }
+            }
+        }
+    }
+
+    public static String parseVarData(AbstractCard c) {
+        StringBuilder sb = new StringBuilder();
+        java.util.regex.Matcher m = PATTERN.matcher(c.rawDescription.replace(DYNAMIC_KEY,""));
+        while (m.find()) {
+            String key = m.group().substring(1, m.group().length()-1).split("\\|")[0];
+            Integer var = getVarFromDynvarKey(c, key);
+            sb.append(key).append(var != null ? var : "?");
+        }
+        return sb.toString();
     }
 
     public static String[] checkForUnwrapping(AbstractCard c, String[] splitText) {
@@ -128,24 +153,22 @@ public class DynamicTextBlocks {
         }
     }
 
-    public static String unwrap(AbstractCard c, String key) {
-        //Cut the leading { and the trailing } and then split the string along each |
-        key = key.substring(1, key.length()-1);
-        String[] parts = key.split("\\|");
-        //Our first piece will always be the dynamic variable we care about. Find its value
+    public static Integer getVarFromDynvarKey(AbstractCard c, String dynvarKey) {
         Integer var = null;
-        if (parts[0].equals("!D!")) {
+        if (dynvarKey.equals("!D!")) {
             //Uses !D! for damage, just like normal dynvars, same applies to !B! and !M!
-            var = c.damage;
-        } else if (parts[0].equals("!B!")) {
-            var = c.block;
-        } else if (parts[0].equals("!M!")) {
-            var = c.magicNumber;
-        } else if (parts[0].equals("!Location!")) {
+            var = c.isDamageModified && !DisplayingUpgradesField.displayingUpgrades.get(c) ? c.damage : CardModifierManager.modifiedBaseValue(c, c.baseDamage, "D");
+        } else if (dynvarKey.equals("!B!")) {
+            var = c.isBlockModified && !DisplayingUpgradesField.displayingUpgrades.get(c) ? c.block : CardModifierManager.modifiedBaseValue(c, c.baseBlock, "B");
+        } else if (dynvarKey.equals("!M!")) {
+            var = c.isMagicNumberModified && !DisplayingUpgradesField.displayingUpgrades.get(c) ? c.magicNumber : CardModifierManager.modifiedBaseValue(c, c.baseMagicNumber, "M");
+        } else if (dynvarKey.equals("!Location!")) {
             //Used to grab the location of the card. Isn't a real dynvar, but we can pretend
-            var = -1; //Master Deck, Compendium, Limbo, modded CardGroups
+            var = -2; //Compendium or otherwise not in a run
             if (CardCrawlGame.dungeon != null && AbstractDungeon.player != null) {
-                if (AbstractDungeon.player.hand.contains(c)) {
+                if (AbstractDungeon.player.masterDeck.contains(c)) {
+                    var = -1;
+                } else if (AbstractDungeon.player.hand.contains(c) || AbstractDungeon.player.limbo.contains(c) || AbstractDungeon.player.cardInUse == c) {
                     var = 0;
                 } else if (AbstractDungeon.player.drawPile.contains(c)) {
                     var = 1;
@@ -154,15 +177,35 @@ public class DynamicTextBlocks {
                 } else if (AbstractDungeon.player.exhaustPile.contains(c) || ExhaustViewFixField.exhaustViewCopy.get(c)) {
                     //This is where we need the field. Without it this will default back to -1 as the cards shown in the Exhaust View are copies that aren't actually in the exhaust pile
                     var = 3;
+                } else {
+                    //This will cover any time the player does not actually own the card (Shop / Reward / Events)
+                    var = 4;
                 }
             }
-        } else if (parts[0].equals("!Upgrades!")) {
-            //Used to grab the amount of times the card was upgraded. Again, isn't a real dynvar
+        } else if (dynvarKey.equals("!Upgrades!")) {
+            //Used to grab the amount of times the card was upgraded. Isn't a real dynvar
             var = c.timesUpgraded;
-        } else if (BaseMod.cardDynamicVariableMap.containsKey(parts[0].replace("!",""))) {
+        } else if (dynvarKey.equals("!Turn!")) {
+            //Used to grab the turn amount. Isn't a real dynvar
+            var = -1;
+            if (AbstractDungeon.player != null) {
+                var = GameActionManager.turn;
+            }
+        } else if (BaseMod.cardDynamicVariableMap.containsKey(dynvarKey.replace("!",""))) {
             //Check to see if it's a recognized dynvar registered by some mod
-            var = BaseMod.cardDynamicVariableMap.get(parts[0].replace("!","")).value(c);
+            var = BaseMod.cardDynamicVariableMap.get(dynvarKey.replace("!","")).value(c);
+        } else if (customChecks.containsKey(dynvarKey)) {
+            var = customChecks.get(dynvarKey).apply(c);
         }
+        return var;
+    }
+
+    public static String unwrap(AbstractCard c, String key) {
+        //Cut the leading { and the trailing } and then split the string along each |
+        key = key.substring(1, key.length()-1);
+        String[] parts = key.split("\\|");
+        //Our first piece will always be the dynamic variable we care about. Find its value
+        Integer var = getVarFromDynvarKey(c, parts[0]);
         //Clean up the first string since we don't need it
         parts = Arrays.copyOfRange(parts, 1, parts.length);
         //If we found a var then we can do stuff, else just return an empty string
@@ -180,24 +223,18 @@ public class DynamicTextBlocks {
                         String[] numbers = split[0].split(",");
                         //Iterate each condition, as long as at least 1 condition matches we set the text
                         for (String n : numbers) {
-                            if(checkMatch(var, n)) {
-                                //Checking the length allows up to know if there is actual text or just an empty string
-                                if (split.length > 1) {
-                                    key = split[1];
-                                } else {
-                                    key = "";
-                                }
+                            //Checking the length allows up to know if there is actual text or just an empty string
+                            String value = checkMatch(var, n, split.length > 1 ? split[1]: "");
+                            if (value != null) {
+                                key = value;
                                 matched = true;
                             }
                         }
                     } else {
                         //Else just check the condition directly
-                        if (checkMatch(var, split[0])) {
-                            if (split.length > 1) {
-                                key = split[1];
-                            } else {
-                                key = "";
-                            }
+                        String value = checkMatch(var, split[0], split.length > 1 ? split[1]: "");
+                        if (value != null) {
+                            key = value;
                             matched = true;
                         }
                     }
@@ -215,7 +252,14 @@ public class DynamicTextBlocks {
         return key;
     }
 
-    private static boolean checkMatch(Integer var, String s) {
+    private static String checkMatch(Integer var, String s, String value) {
+        //Repeat check
+        if (s.equals("repeat")) {
+            if (var > 0) {
+                return StringUtils.repeat(value, var);
+            }
+            return "";
+        }
         //Greater Than, Less Than, Divisible By, and Ends With are the 4 supported conditional checks, in addition to Direct Match, which has no symbol attached
         boolean greater = s.contains(">");
         boolean less = s.contains("<");
@@ -233,9 +277,11 @@ public class DynamicTextBlocks {
             //Checks the Ends With case. If the numbers are equal, or if the trailing digits of comp are all 0's, then var ends with N
             boolean digitCheck = ends && (comp == 0 || comp % Math.pow(10, s.length()) == 0);
             //As long as at least one condition matches we are good
-            return signCheck || moduloCheck || digitCheck;
+            if (signCheck || moduloCheck || digitCheck) {
+                return value;
+            }
         }
-        //If it's not a creatable number, there was a format error. Just return false instead of blowing up
-        return false;
+        //The input doesn't match any cases above
+        return null;
     }
 }
